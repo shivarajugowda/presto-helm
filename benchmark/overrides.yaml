@@ -1,0 +1,6 @@
+prewarm-runs: 1
+runs: 3
+concurrency: 1
+tpch_300:  tpch_sf1_orc
+tpch_1000: tpch_sf1_orc
+tpch_3000: tpch_sf1_orc

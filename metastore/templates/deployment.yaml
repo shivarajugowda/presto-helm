@@ -1,0 +1,84 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "metastore.fullname" . }}
+  labels:
+    {{- include "metastore.labels" . | nindent 4 }}
+spec:
+{{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+{{- end }}
+  selector:
+    matchLabels:
+      {{- include "metastore.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+    {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      labels:
+        {{- include "metastore.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "metastore.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          env:
+            - name: INIT_SCHEMA
+              value: "{{ .Values.service.INIT_SCHEMA }}"
+            - name: HIVE_METASTORE_PORT
+              value: "{{ .Values.service.HIVE_METASTORE_PORT }}"
+            - name: HIVE_METASTORE_URI
+              value: "{{ .Values.service.HIVE_METASTORE_URI }}"
+            - name: HIVE_METASTORE_JDBC_URL
+              value: "{{ .Values.service.HIVE_METASTORE_JDBC_URL }}"
+            - name: HIVE_METASTORE_DRIVER
+              value: "{{ .Values.service.HIVE_METASTORE_DRIVER }}"
+            - name: HIVE_METASTORE_USER
+              value: "{{ .Values.service.HIVE_METASTORE_USER }}"
+            - name: HIVE_METASTORE_PASSWORD
+              value: "{{ .Values.service.HIVE_METASTORE_PASSWORD }}"
+            - name: S3_ENDPOINT
+              value: "{{ .Values.service.S3_ENDPOINT }}"
+            - name: S3_ACCESS_KEY
+              value: "{{ .Values.service.S3_ACCESS_KEY }}"
+            - name: S3_SECRET_KEY
+              value: "{{ .Values.service.S3_SECRET_KEY }}"
+            - name: S3_HIVE_WAREHOUSE_DIR
+              value: "{{ .Values.service.S3_HIVE_WAREHOUSE_DIR }}"
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.HIVE_METASTORE_PORT }}
+              protocol: TCP
+#          livenessProbe:
+#            httpGet:
+#              path: /
+#              port: http
+#          readinessProbe:
+#            httpGet:
+#              path: /
+#              port: http
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
